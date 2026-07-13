@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSON &amp; XML Formatter</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"></path><path d="m6 8-4 4 4 4"></path><path d="m14.5 4-5 16"></path></svg>
+    <span>format</span>
+  </div>
+  <span class="topbar-title">JSON &amp; XML formatter</span>
+</header>
+
+<main class="layout">
+
+  <section class="pane">
+    <div class="pane-toolbar">
+      <div class="pane-tab">
+        <span id="input-glyph" class="glyph">{}</span>
+        <span class="name">input</span>
+      </div>
+      <div class="pane-toolbar-spacer"></div>
+      <div class="pane-actions">
+        <button id="import-btn" class="icon-btn" title="Open file" aria-label="Open file">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"></path></svg>
+        </button>
+        <button id="clear-btn" class="icon-btn" title="Clear" aria-label="Clear" hidden>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+        <input id="file-input" type="file" accept=".json,.xml,.txt,application/json,text/xml,application/xml" hidden>
+      </div>
+    </div>
+
+    <div class="editor-body">
+      <div id="input-gutter" class="gutter"></div>
+      <div class="editor-wrap">
+        <div id="input-overlay" class="editor-overlay" aria-hidden="true"></div>
+        <textarea id="input-textarea" class="editor-input" placeholder="Paste your JSON or XML here" spellcheck="false"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <div class="pane-divider"></div>
+
+  <section class="pane">
+    <div class="pane-toolbar">
+      <div class="pane-tab">
+        <span id="output-glyph" class="glyph">{}</span>
+        <span class="name">output</span>
+        <span class="readonly">read-only</span>
+      </div>
+      <div class="pane-toolbar-spacer"></div>
+      <div class="pane-actions">
+        <button id="mode-pretty-btn" class="mode-btn active">Pretty</button>
+        <button id="mode-tree-btn" class="mode-btn">Tree</button>
+        <button id="mode-min-btn" class="mode-btn">Min</button>
+        <div class="divider-v"></div>
+        <div id="tree-controls" class="tree-controls" hidden>
+          <button id="expand-all-btn" class="icon-btn" title="Expand all" aria-label="Expand all">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+          </button>
+          <button id="collapse-all-btn" class="icon-btn" title="Collapse all" aria-label="Collapse all">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>
+          </button>
+          <div class="divider-v"></div>
+        </div>
+        <button id="copy-btn" class="icon-btn" title="Copy" aria-label="Copy" disabled>
+          <span id="copy-icon-copy"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></span>
+          <span id="copy-icon-check" hidden><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>
+        </button>
+        <button id="download-btn" class="icon-btn" title="Download" aria-label="Download" disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="output-body" class="output-body"></div>
+  </section>
+
+</main>
+
+<div id="error-banner" class="error-banner" hidden>
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><circle cx="12" cy="12" r="10"></circle><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg>
+  <span id="error-text"></span>
+</div>
+
+<footer class="status-bar">
+  <div class="status-left">
+    <span id="status-icon"></span>
+    <span id="status-text">No input</span>
+  </div>
+  <div class="status-spacer"></div>
+  <div class="status-right">
+    <span>Ln <span id="status-lines">0</span></span>
+    <button id="indent-toggle-btn" class="indent-btn" title="Toggle indent size">Spaces: 2</button>
+    <span>UTF-8</span>
+    <span id="mode-name-label">pretty</span>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
