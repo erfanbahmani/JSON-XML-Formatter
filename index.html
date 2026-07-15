@@ -79,6 +79,21 @@
       </div>
     </div>
 
+    <div id="search-bar" class="search-bar" hidden>
+      <input id="search-input" type="text" placeholder="Find in output" spellcheck="false" autocomplete="off">
+      <span id="search-count" class="search-count">0/0</span>
+      <div class="divider-v"></div>
+      <button id="search-prev-btn" class="icon-btn" title="Previous match (Shift+Enter)" aria-label="Previous match">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+      </button>
+      <button id="search-next-btn" class="icon-btn" title="Next match (Enter)" aria-label="Next match">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </button>
+      <button id="search-close-btn" class="icon-btn" title="Close (Esc)" aria-label="Close search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+      </button>
+    </div>
+
     <div id="output-body" class="output-body"></div>
   </section>
 

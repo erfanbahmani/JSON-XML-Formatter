@@ -355,6 +355,12 @@ const refs = {
   outputBody: document.getElementById('output-body'),
   errorBanner: document.getElementById('error-banner'),
   errorText: document.getElementById('error-text'),
+  searchBar: document.getElementById('search-bar'),
+  searchInput: document.getElementById('search-input'),
+  searchCount: document.getElementById('search-count'),
+  searchPrevBtn: document.getElementById('search-prev-btn'),
+  searchNextBtn: document.getElementById('search-next-btn'),
+  searchCloseBtn: document.getElementById('search-close-btn'),
   statusIcon: document.getElementById('status-icon'),
   statusText: document.getElementById('status-text'),
   statusLines: document.getElementById('status-lines'),
@@ -469,6 +475,115 @@ function downloadOutput() {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// ---------- output search ----------
+
+const MAX_MATCHES = 2000;
+
+const search = { active: false, query: '', matches: [], index: 0 };
+
+function clearSearchHighlights() {
+  refs.outputBody.querySelectorAll('mark.search-mark').forEach((m) => {
+    const parent = m.parentNode;
+    m.replaceWith(document.createTextNode(m.textContent));
+    parent.normalize();
+  });
+  search.matches = [];
+}
+
+// Matches can straddle syntax-highlight spans, so search the concatenated
+// text of all text nodes and record which node(s) each match falls in.
+function findMatchGroups(root, query) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const spans = [];
+  let full = '';
+  let node;
+  while ((node = walker.nextNode())) {
+    spans.push({ node, start: full.length, end: full.length + node.nodeValue.length });
+    full += node.nodeValue;
+  }
+  const hay = full.toLowerCase();
+  const q = query.toLowerCase();
+  const groups = [];
+  let idx = 0;
+  while (groups.length < MAX_MATCHES && (idx = hay.indexOf(q, idx)) !== -1) {
+    const end = idx + q.length;
+    const segs = [];
+    for (const s of spans) {
+      if (s.end <= idx) continue;
+      if (s.start >= end) break;
+      segs.push({ node: s.node, start: Math.max(idx, s.start) - s.start, end: Math.min(end, s.end) - s.start });
+    }
+    groups.push(segs);
+    idx = end;
+  }
+  return groups;
+}
+
+function updateSearchCount() {
+  refs.searchCount.textContent = search.matches.length
+    ? (search.index + 1) + '/' + search.matches.length
+    : '0/0';
+}
+
+function setCurrentMatch(scroll) {
+  refs.outputBody.querySelectorAll('mark.search-mark.current').forEach((m) => m.classList.remove('current'));
+  const group = search.matches[search.index];
+  if (group) {
+    group.forEach((m) => m.classList.add('current'));
+    if (scroll) group[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+  }
+  updateSearchCount();
+}
+
+function applySearchHighlights(scroll) {
+  clearSearchHighlights();
+  if (!search.query || refs.outputBody.querySelector('.output-empty')) {
+    updateSearchCount();
+    return;
+  }
+  const groups = findMatchGroups(refs.outputBody, search.query);
+  // Wrap in reverse document order so pending offsets stay valid as
+  // surroundContents splits text nodes.
+  for (let i = groups.length - 1; i >= 0; i--) {
+    const marks = [];
+    for (let j = groups[i].length - 1; j >= 0; j--) {
+      const seg = groups[i][j];
+      const range = document.createRange();
+      range.setStart(seg.node, seg.start);
+      range.setEnd(seg.node, seg.end);
+      const mark = document.createElement('mark');
+      mark.className = 'search-mark';
+      range.surroundContents(mark);
+      marks.unshift(mark);
+    }
+    search.matches.unshift(marks);
+  }
+  if (search.index >= search.matches.length) search.index = 0;
+  setCurrentMatch(scroll);
+}
+
+function gotoMatch(delta) {
+  const len = search.matches.length;
+  if (!len) return;
+  search.index = (search.index + delta + len) % len;
+  setCurrentMatch(true);
+}
+
+function openSearch() {
+  search.active = true;
+  refs.searchBar.hidden = false;
+  refs.searchInput.focus();
+  refs.searchInput.select();
+  applySearchHighlights(true);
+}
+
+function closeSearch() {
+  search.active = false;
+  refs.searchBar.hidden = true;
+  clearSearchHighlights();
+  refs.inputTextarea.focus();
+}
+
 // ---------- render ----------
 
 function render() {
@@ -522,6 +637,9 @@ function render() {
     refs.outputBody.append(el('div', { className: 'output-empty' }, 'Formatted output will appear here.'));
   }
 
+  // re-apply search highlights lost when the output pane was rebuilt
+  if (search.active) applySearchHighlights(false);
+
   // copy / download buttons
   refs.copyBtn.disabled = !hasOutput;
   refs.downloadBtn.disabled = !hasOutput;
@@ -565,5 +683,31 @@ refs.collapseAllBtn.addEventListener('click', collapseAll);
 refs.copyBtn.addEventListener('click', copyOutput);
 refs.downloadBtn.addEventListener('click', downloadOutput);
 refs.indentToggleBtn.addEventListener('click', toggleIndent);
+
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+    e.preventDefault();
+    openSearch();
+  } else if (e.key === 'Escape' && search.active) {
+    closeSearch();
+  }
+});
+
+refs.searchInput.addEventListener('input', (e) => {
+  search.query = e.target.value;
+  search.index = 0;
+  applySearchHighlights(true);
+});
+
+refs.searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    gotoMatch(e.shiftKey ? -1 : 1);
+  }
+});
+
+refs.searchPrevBtn.addEventListener('click', () => gotoMatch(-1));
+refs.searchNextBtn.addEventListener('click', () => gotoMatch(1));
+refs.searchCloseBtn.addEventListener('click', closeSearch);
 
 render();
